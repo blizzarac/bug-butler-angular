@@ -1,0 +1,40 @@
+<div class="page-head">
+  <div>
+    <div class="crumbs">Receivables / Invoices</div>
+    <h1>Invoices</h1>
+  </div>
+  <div class="filters">
+    <span class="chip">Status: <b>Overdue</b></span>
+    <span class="chip">Currency: <b>EUR</b></span>
+  </div>
+</div>
+
+<section class="kpis">
+  <div class="kpi"><span>Outstanding</span><strong>€ 48,210.00</strong></div>
+  <div class="kpi"><span>Overdue invoices</span><strong>{{ invoices.length }}</strong></div>
+  <div class="kpi" [class.bad]="total !== total"><span>Total in this view</span><strong>{{ money(total) }}</strong></div>
+</section>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Invoice</th><th>Customer</th><th>Due</th><th class="num">Amount</th><th>Credit note</th><th class="num">Balance</th></tr>
+    </thead>
+    <tbody>
+      @for (inv of invoices; track inv.id) {
+        <tr>
+          <td>{{ inv.id }}</td>
+          <td>{{ inv.customer }}</td>
+          <td>{{ inv.due }}</td>
+          <td class="num">{{ money(inv.amount) }}</td>
+          <td>{{ inv.creditNote ?? '–' }}</td>
+          <td class="num" [class.bad]="safeBalance(inv) !== safeBalance(inv)">{{ money(safeBalance(inv)) }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<p class="note">
+  This page has a seeded bug: INV-2041's balance is NaN. Use the green button (or Ctrl/⌘+Shift+B) to report it.
+</p>

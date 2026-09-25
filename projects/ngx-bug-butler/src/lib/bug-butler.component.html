@@ -1,0 +1,198 @@
+@if (enabled) {
+  @if (capture() === 'off') {
+    <button type="button" class="fab" (click)="toggle()" [attr.aria-expanded]="open()" aria-controls="bb-panel" [title]="'Report a bug' + (shortcutHint ? ' (' + shortcutHint + ')' : '')">
+      <span class="fab-icon" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7V5a4 4 0 0 1 8 0v2"/><rect x="6" y="7" width="12" height="13" rx="6"/><path d="M12 11v9M3 13h3M18 13h3M4 7l2.5 2M20 7l-2.5 2M4 20l2.5-2M20 20l-2.5-2"/></svg>
+      </span>
+      <span class="fab-label">Report a bug</span>
+      @if (config.environmentLabel) {
+        <span class="env">{{ config.environmentLabel }}</span>
+      }
+      @if (shortcutHint) {
+        <kbd>{{ shortcutHint }}</kbd>
+      }
+    </button>
+  }
+
+  @if (open() && capture() === 'off') {
+    <section id="bb-panel" class="panel" [class.is-expanded]="expanded()" role="dialog" aria-label="Report a bug">
+      <header class="head">
+        <div class="titles">
+          <h2>Report a bug</h2>
+          <span class="where mono">{{ snapshot()?.context?.route || snapshot()?.context?.url }}</span>
+        </div>
+        @if (status() !== 'sent') {
+          <button type="button" class="icon-btn" (click)="toggleExpanded()" [attr.aria-pressed]="expanded()" [title]="expanded() ? 'Back to the small panel' : 'Expand to full screen'">
+            @if (expanded()) {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>
+            } @else {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+            }
+          </button>
+        }
+        <button type="button" class="icon-btn" (click)="minimise()" title="Minimise (your draft is kept)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>
+        </button>
+      </header>
+
+      @if (status() === 'sent') {
+        <div class="done">
+          <span class="label">Report sent</span>
+          @if (result()?.key) {
+            <div class="key">{{ result()!.key }}</div>
+          }
+          <p>Thanks. The ticket has your screenshots, attachments and the page details you left switched on.</p>
+          <div class="row">
+            @if (result()?.url) {
+              <a class="tool primary" [href]="result()!.url" target="_blank" rel="noopener">Open ticket</a>
+            }
+            <button type="button" class="tool" (click)="startOver()">Report another</button>
+          </div>
+        </div>
+      } @else {
+        <div class="body">
+          <div class="media">
+            <div class="row">
+              <span class="label grow">Screenshots{{ shots().length ? ' · ' + shots().length : '' }}</span>
+              <button type="button" class="tool primary" (click)="startAreaCapture()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/></svg>
+                Capture area
+              </button>
+              <button type="button" class="tool" (click)="captureScreen()">Whole screen</button>
+            </div>
+
+            <div class="row markup-bar">
+              <div class="seg" role="group" aria-label="Markup tool">
+                <button type="button" [attr.aria-pressed]="tool() === 'highlight'" (click)="tool.set('highlight')">Highlight</button>
+                <button type="button" [attr.aria-pressed]="tool() === 'redact'" (click)="tool.set('redact')">Redact</button>
+              </div>
+              <span class="hint grow">Drag on the screenshot to draw a box.</span>
+              <button type="button" class="tool" (click)="undoMarkup()" [disabled]="!selectedShot()?.undo?.length">Undo</button>
+            </div>
+
+            <div class="stage" (pointerdown)="onStagePointerDown($event)" (pointermove)="onStagePointerMove($event)" (pointerup)="onStagePointerUp($event)">
+              <div class="canvas-host" #canvasHost></div>
+              @if (!shots().length) {
+                <p class="empty">Capture the part of the page that looks wrong, then mark it up here.</p>
+              }
+            </div>
+
+            <div class="thumbs">
+              @for (shot of shots(); track shot.id; let i = $index) {
+                <div class="thumb" [class.is-selected]="i === selected()">
+                  <button type="button" class="thumb-open" (click)="selectShot(i)" [attr.aria-label]="'Open ' + shot.label + ' for markup'">
+                    <img [src]="shot.thumb" [alt]="shot.label" />
+                    <span>{{ shot.label }}</span>
+                  </button>
+                  <button type="button" class="thumb-x" (click)="removeShot(i, $event)" [title]="'Remove ' + shot.label">×</button>
+                </div>
+              } @empty {
+                <p class="empty small">No screenshots yet. You can also paste an image.</p>
+              }
+            </div>
+          </div>
+
+          <form class="form" id="bb-form" (submit)="submit($event)" novalidate>
+            <div class="field">
+              <label class="label" for="bb-title">Title</label>
+              <input #titleInput id="bb-title" class="input" [class.is-invalid]="titleInvalid()" autocomplete="off" placeholder="What is wrong, in one line"
+                     [value]="title()" (input)="setTitle($any($event.target).value)" [attr.aria-invalid]="titleInvalid()" aria-describedby="bb-title-error" />
+              @if (titleInvalid()) {
+                <span id="bb-title-error" class="error">Add a short title so the ticket is easy to find.</span>
+              }
+            </div>
+
+            <div class="field">
+              <span class="label" id="bb-type-label">Type</span>
+              <div class="seg" role="group" aria-labelledby="bb-type-label">
+                @for (t of types; track t.value) {
+                  <button type="button" [attr.aria-pressed]="type() === t.value" (click)="type.set(t.value)">{{ t.label }}</button>
+                }
+              </div>
+            </div>
+
+            <div class="field">
+              <span class="label" id="bb-sev-label">Severity</span>
+              <div class="seg" role="group" aria-labelledby="bb-sev-label">
+                @for (s of severities; track s.value) {
+                  <button type="button" [attr.aria-pressed]="severity() === s.value" (click)="severity.set(s.value)"><i class="sev sev-{{ s.value }}"></i>{{ s.label }}</button>
+                }
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label" for="bb-desc">What happened</label>
+              <textarea id="bb-desc" class="textarea" rows="5" placeholder="Steps to reproduce, what you expected, what you saw"
+                        [value]="description()" (input)="description.set($any($event.target).value)"></textarea>
+            </div>
+
+            <div class="field">
+              <span class="label">Attachments</span>
+              <div class="drop" [class.is-over]="dropping()" (dragover)="onDragOver($event)" (dragleave)="dropping.set(false)" (drop)="onDrop($event)">
+                @if (files().length) {
+                  <ul class="files">
+                    @for (f of files(); track f; let i = $index) {
+                      <li>
+                        <span class="name">{{ f.name }}</span>
+                        <span class="size">{{ formatBytes(f.size) }}</span>
+                        <button type="button" class="icon-btn small" (click)="removeFile(i)" [title]="'Remove ' + f.name">×</button>
+                      </li>
+                    }
+                  </ul>
+                }
+                <span class="hint">Drop files here or <label class="link" for="bb-file">browse</label>. Max {{ formatBytes(config.maxAttachmentBytes) }} each.</span>
+                <input id="bb-file" type="file" multiple hidden (change)="onFilesPicked($any($event.target))" />
+              </div>
+            </div>
+
+            <details class="context" (toggle)="refreshContext()">
+              <summary>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+                Page details included
+                <span class="count">{{ includedCount() }} of {{ snapshot()?.items?.length ?? 0 }}</span>
+              </summary>
+              <div class="ctx-list">
+                @for (item of snapshot()?.items ?? []; track item.key) {
+                  <label class="ctx-item">
+                    <input type="checkbox" [id]="'bb-ctx-' + item.key" [checked]="!excluded().has(item.key)" (change)="toggleContext(item.key, $any($event.target).checked)" />
+                    <span class="k">{{ item.label }}</span>
+                    <span class="v mono" [class.alert]="item.alert">{{ item.value }}</span>
+                  </label>
+                }
+              </div>
+            </details>
+          </form>
+        </div>
+
+        <footer class="foot">
+          <div class="dest">
+            @if (status() === 'error') {
+              <span class="error" role="alert">{{ errorMessage() }}</span>
+            } @else if (config.destinationLabel) {
+              Creates a ticket in <b>{{ config.destinationLabel }}</b>
+            }
+          </div>
+          <button type="submit" form="bb-form" class="send" [attr.aria-busy]="status() === 'sending'" [disabled]="status() === 'sending'">
+            {{ status() === 'sending' ? 'Sending…' : status() === 'error' ? 'Try again' : 'Send report' }}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </footer>
+      }
+    </section>
+  }
+
+  @if (capture() === 'select') {
+    <div class="capture" [class.is-dragging]="selection()" (pointerdown)="onCapturePointerDown($event)" (pointermove)="onCapturePointerMove($event)" (pointerup)="onCapturePointerUp($event)">
+      <div class="cap-hint">Drag to select an area · <span class="mono">Esc</span> to cancel</div>
+      @if (selection(); as s) {
+        <div class="sel" [style.left.px]="s.x" [style.top.px]="s.y" [style.width.px]="s.width" [style.height.px]="s.height">
+          <span class="dim mono">{{ round(s.width) }} × {{ round(s.height) }}</span>
+        </div>
+      }
+    </div>
+  }
+
+  @if (toast()) {
+    <div class="toast" role="status">{{ toast() }}</div>
+  }
+}

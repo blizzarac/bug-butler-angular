@@ -1,0 +1,20 @@
+{
+  "name": "bug-butler-jira",
+  "version": "0.1.0",
+  "description": "Turns ngx-bug-butler reports into Jira issues with attachments. Zero dependencies; runs anywhere with fetch (Node 18+, Deno, Bun, edge runtimes).",
+  "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "keywords": ["jira", "bug-report", "atlassian", "ngx-bug-butler"],
+  "sideEffects": false
+}

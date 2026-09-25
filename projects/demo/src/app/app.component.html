@@ -1,0 +1,18 @@
+<header class="topbar">
+  <div class="logo"><i></i>Ledgerline</div>
+  <span class="env-ribbon">STAGING</span>
+  <div class="spacer"></div>
+  @if (bugButler.enabled) {
+    <button type="button" class="ghost" (click)="bugButler.open()">Report a bug</button>
+  }
+  <div class="avatar">QA</div>
+</header>
+<div class="shell">
+  <nav class="side">
+    <a routerLink="/invoices" routerLinkActive="active">Invoices</a>
+    <a routerLink="/settings" routerLinkActive="active">Settings</a>
+  </nav>
+  <main>
+    <router-outlet />
+  </main>
+</div>

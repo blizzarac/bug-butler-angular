@@ -1,0 +1,45 @@
+{
+  "name": "bug-butler",
+  "version": "0.1.0",
+  "scripts": {
+    "start": "ng build ngx-bug-butler && ng serve demo",
+    "build": "npm run build:lib && npm run build:jira && ng build demo",
+    "build:lib": "ng build ngx-bug-butler",
+    "build:jira": "tsc -p projects/bug-butler-jira && node -e \"for (const f of ['package.json','README.md']) require('fs').copyFileSync('projects/bug-butler-jira/'+f,'dist/bug-butler-jira/'+f)\"",
+    "check:contract": "tsc -p projects/bug-butler-jira/tsconfig.contract.json",
+    "test": "npm run test:lib && npm run test:jira",
+    "test:lib": "ng test ngx-bug-butler --watch=false --browsers=ChromeHeadlessCI",
+    "test:jira": "npm run build:jira && node --test projects/bug-butler-jira/test/jira.test.mjs",
+    "e2e": "ng build demo && playwright test -c e2e"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/animations": "^17.3.0",
+    "@angular/common": "^17.3.0",
+    "@angular/compiler": "^17.3.0",
+    "@angular/core": "^17.3.0",
+    "@angular/forms": "^17.3.0",
+    "@angular/platform-browser": "^17.3.0",
+    "@angular/platform-browser-dynamic": "^17.3.0",
+    "@angular/router": "^17.3.0",
+    "html2canvas-pro": "^2.4.5",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0",
+    "zone.js": "~0.14.3"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^17.3.17",
+    "@angular/cli": "^17.3.17",
+    "@angular/compiler-cli": "^17.3.0",
+    "@playwright/test": "1.55",
+    "@types/jasmine": "~5.1.0",
+    "jasmine-core": "~5.1.0",
+    "karma": "~6.4.0",
+    "karma-chrome-launcher": "~3.2.0",
+    "karma-coverage": "~2.2.0",
+    "karma-jasmine": "~5.1.0",
+    "karma-jasmine-html-reporter": "~2.1.0",
+    "ng-packagr": "^17.3.0",
+    "typescript": "~5.4.2"
+  }
+}

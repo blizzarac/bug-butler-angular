@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build:lib
+      - run: npm run test:lib
+      - run: npm run test:jira
+      - run: npm run check:contract
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+      - name: Pack the library for the compatibility job
+        run: npm pack ./dist/ngx-bug-butler --pack-destination .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ngx-bug-butler
+          path: ngx-bug-butler-*.tgz
+
+  # The library is built with Angular 17; this checks it still works in a new app on the newest Angular.
+  compat-latest-angular:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          name: ngx-bug-butler
+      - name: Create a fresh app on the latest Angular
+        run: |
+          NG_CLI_ANALYTICS=false npx -y @angular/cli@latest new compat-app --defaults --skip-git --ssr=false --style=css --skip-tests
+          cd compat-app
+          npm i ../ngx-bug-butler-*.tgz
+          node -e "
+            const fs = require('fs'); const p = 'src/app/app.config.ts'; let s = fs.readFileSync(p, 'utf8');
+            s = \"import { provideBugButler } from 'ngx-bug-butler';\n\" + s;
+            s = s.replace(/providers:\s*\[/, \"providers: [provideBugButler({ enabled: true, endpoint: '/api/bug-reports' }),\");
+            fs.writeFileSync(p, s);"
+          npx ng build
+      - run: npm ci && npx playwright install --with-deps chromium
+      - run: npx playwright test -c e2e/compat
+        env:
+          ROOT: ${{ github.workspace }}/compat-app/dist/compat-app/browser
