@@ -1,0 +1,653 @@
+<title>Bug Butler Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* ---------- tokens ---------- */
+  :root {
+    /* host app (a stand-in for "any Angular app") */
+    --h-bg: #F3F5F8; --h-card: #FFFFFF; --h-ink: #1B2230; --h-muted: #677085;
+    --h-line: #E2E6EE; --h-accent: #3A5BD9; --h-danger: #C23B3B; --h-warn-bg: #FFF4DE; --h-warn-ink: #8A5A00;
+    /* Bug Butler: livery green + brass */
+    --bb-surface: #FBFAF6; --bb-raised: #FFFFFF; --bb-ink: #17231F; --bb-muted: #5E6D67;
+    --bb-line: #DCE3DE; --bb-green: #1F5B4A; --bb-green-ink: #FFFFFF; --bb-green-soft: #E3EFEA;
+    --bb-brass: #B8893B; --bb-brass-soft: #F6EBD4; --bb-stage: #E9EDEA; --bb-danger: #B3362E;
+    --bb-shadow: 0 1px 2px rgba(16,32,26,.06), 0 12px 40px rgba(16,32,26,.18);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --h-bg: #0F1318; --h-card: #171C23; --h-ink: #E4E8EF; --h-muted: #8E97A8;
+      --h-line: #262D38; --h-accent: #7D95F0; --h-danger: #F07B7B; --h-warn-bg: #3A2E14; --h-warn-ink: #F1C774;
+      --bb-surface: #141C19; --bb-raised: #1B2622; --bb-ink: #E8EEEA; --bb-muted: #9AAAA3;
+      --bb-line: #2B3833; --bb-green: #5FB59A; --bb-green-ink: #0C1A15; --bb-green-soft: #1E342C;
+      --bb-brass: #D8AE5E; --bb-brass-soft: #3A3020; --bb-stage: #0E1412; --bb-danger: #F08A80;
+      --bb-shadow: 0 1px 2px rgba(0,0,0,.4), 0 16px 48px rgba(0,0,0,.55);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --h-bg: #0F1318; --h-card: #171C23; --h-ink: #E4E8EF; --h-muted: #8E97A8;
+    --h-line: #262D38; --h-accent: #7D95F0; --h-danger: #F07B7B; --h-warn-bg: #3A2E14; --h-warn-ink: #F1C774;
+    --bb-surface: #141C19; --bb-raised: #1B2622; --bb-ink: #E8EEEA; --bb-muted: #9AAAA3;
+    --bb-line: #2B3833; --bb-green: #5FB59A; --bb-green-ink: #0C1A15; --bb-green-soft: #1E342C;
+    --bb-brass: #D8AE5E; --bb-brass-soft: #3A3020; --bb-stage: #0E1412; --bb-danger: #F08A80;
+    --bb-shadow: 0 1px 2px rgba(0,0,0,.4), 0 16px 48px rgba(0,0,0,.55);
+  }
+
+  html, body { height: 100%; }
+  body { background: var(--h-bg); color: var(--h-ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+
+  /* ---------- host app ---------- */
+  .topbar { display: flex; align-items: center; gap: 16px; padding: 12px 20px; background: var(--h-card); border-bottom: 1px solid var(--h-line); }
+  .logo { font-weight: 700; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+  .logo i { width: 22px; height: 22px; border-radius: 6px; background: var(--h-accent); display: inline-block; }
+  .env-ribbon { font-size: 11px; font-weight: 600; letter-spacing: .06em; padding: 2px 8px; border-radius: 99px; background: var(--h-warn-bg); color: var(--h-warn-ink); }
+  .topbar .spacer { flex: 1; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--h-line); display: grid; place-items: center; font-size: 12px; font-weight: 600; color: var(--h-muted); }
+  .shell { display: grid; grid-template-columns: 200px 1fr; min-height: calc(100% - 53px); }
+  .side { padding: 16px 12px; border-right: 1px solid var(--h-line); display: flex; flex-direction: column; gap: 2px; }
+  .side a { color: var(--h-muted); text-decoration: none; padding: 7px 10px; border-radius: 6px; }
+  .side a[aria-current] { background: var(--h-card); color: var(--h-ink); font-weight: 600; box-shadow: 0 0 0 1px var(--h-line); }
+  main { padding: 24px 28px 120px; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  .page-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+  .page-head h1 { margin: 0; font-size: 22px; letter-spacing: -.01em; }
+  .crumbs { color: var(--h-muted); font-size: 12px; }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { border: 1px solid var(--h-line); background: var(--h-card); border-radius: 6px; padding: 5px 10px; font-size: 13px; color: var(--h-muted); }
+  .chip b { color: var(--h-ink); font-weight: 600; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; background: var(--h-bg); }
+  .kpi { background: var(--h-card); border: 1px solid var(--h-line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+  .kpi span { font-size: 12px; color: var(--h-muted); }
+  .kpi strong { font-size: 22px; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .kpi.bad strong { color: var(--h-danger); }
+  .table-wrap { background: var(--h-card); border: 1px solid var(--h-line); border-radius: 10px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 560px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--h-line); white-space: nowrap; }
+  th { font-size: 12px; font-weight: 600; color: var(--h-muted); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: 0; }
+  .status { font-size: 12px; font-weight: 600; color: var(--h-danger); }
+  td.bad { color: var(--h-danger); font-weight: 600; }
+  .demo-note { max-width: 62ch; color: var(--h-muted); font-size: 13px; border-left: 2px solid var(--h-line); padding-left: 12px; }
+  .demo-note b { color: var(--h-ink); }
+
+  @media (max-width: 760px) {
+    .shell { grid-template-columns: 1fr; }
+    .side { display: none; }
+    main { padding: 16px 16px 120px; }
+    .kpis { grid-template-columns: 1fr; }
+    .topbar nav { display: none; }
+  }
+
+  /* ---------- Bug Butler widget ---------- */
+  #bb-root { font-family: "Figtree", system-ui, sans-serif; color: var(--bb-ink); font-size: 14px; }
+  #bb-root * { box-sizing: border-box; }
+  #bb-root button { font: inherit; color: inherit; cursor: pointer; }
+  #bb-root :focus-visible { outline: 2px solid var(--bb-brass); outline-offset: 2px; }
+  .bb-display { font-family: "Bricolage Grotesque", "Figtree", system-ui, sans-serif; }
+  .bb-mono { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; }
+
+  .bb-fab { position: fixed; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 2147483000;
+    display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 8px; border: 0; border-radius: 99px;
+    background: var(--bb-green); color: var(--bb-green-ink) !important; box-shadow: var(--bb-shadow); transition: transform .15s ease; }
+  .bb-fab:hover { transform: translateY(-1px); }
+  .bb-fab .bb-fab-icon { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.14); }
+  .bb-fab .bb-env { font-size: 10px; font-weight: 600; letter-spacing: .08em; padding: 2px 6px; border-radius: 4px; background: var(--bb-brass); color: #1B1406; }
+  .bb-fab kbd { font: 500 11px "JetBrains Mono", monospace; opacity: .7; }
+
+  .bb-panel { position: fixed; z-index: 2147483001; right: 20px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); width: 400px;
+    max-height: calc(100% - 100px); display: flex; flex-direction: column; background: var(--bb-surface); border: 1px solid var(--bb-line);
+    border-radius: 16px; box-shadow: var(--bb-shadow); overflow: hidden; transform-origin: bottom right; animation: bb-in .18s ease-out; }
+  @keyframes bb-in { from { transform: translateY(8px) scale(.98); } to { transform: none; } }
+  .bb-panel.is-expanded { inset: 16px; width: auto; max-height: none; bottom: 16px; }
+  .bb-head { display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 16px; border-bottom: 1px solid var(--bb-line); }
+  .bb-head h2 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+  .bb-head .bb-where { font-size: 12px; color: var(--bb-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bb-head .bb-titles { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+  .bb-icon-btn { width: 32px; height: 32px; border-radius: 8px; border: 0; background: transparent; display: grid; place-items: center; color: var(--bb-muted) !important; flex: none; }
+  .bb-icon-btn:hover { background: var(--bb-green-soft); color: var(--bb-ink) !important; }
+
+  .bb-body { flex: 1; min-height: 0; overflow: auto; display: grid; grid-template-columns: 1fr; }
+  .bb-panel.is-expanded .bb-body { grid-template-columns: minmax(0, 1fr) 420px; overflow: hidden; }
+  .bb-media { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px 4px; }
+  .bb-media > * { flex: none; }
+  .bb-panel.is-expanded .bb-media { min-height: 0; }
+  .bb-panel.is-expanded .bb-stage { flex: 1; }
+  .bb-panel.is-expanded .bb-media { background: var(--bb-stage); padding: 16px; border-right: 1px solid var(--bb-line); }
+  .bb-form { display: flex; flex-direction: column; gap: 14px; padding: 12px 16px 16px; }
+  .bb-panel.is-expanded .bb-form { overflow: auto; padding-top: 16px; }
+
+  .bb-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .bb-label { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--bb-muted); }
+  .bb-row .bb-label { flex: 1; }
+  .bb-tool { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--bb-line); background: var(--bb-raised); border-radius: 8px; padding: 6px 10px; font-size: 13px; font-weight: 500; }
+  .bb-tool:hover { border-color: var(--bb-green); }
+  .bb-tool.primary { background: var(--bb-green); border-color: var(--bb-green); color: var(--bb-green-ink) !important; }
+  .bb-tool[disabled] { opacity: .45; cursor: default; }
+
+  .bb-thumbs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .bb-thumb { position: relative; flex: none; width: 112px; border: 1px solid var(--bb-line); border-radius: 8px; padding: 0; background: var(--bb-raised); overflow: hidden; text-align: left; }
+  .bb-thumb img { display: block; width: 100%; height: 64px; object-fit: cover; object-position: top left; }
+  .bb-thumb span { display: block; font-size: 11px; padding: 4px 6px; color: var(--bb-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bb-thumb[aria-pressed="true"] { border-color: var(--bb-brass); box-shadow: 0 0 0 2px var(--bb-brass-soft); }
+  .bb-thumb .bb-x { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; border: 0; background: rgba(10,16,14,.7); color: #fff !important; display: grid; place-items: center; font-size: 12px; line-height: 1; opacity: 0; transition: opacity .12s; }
+  .bb-thumb:hover .bb-x, .bb-thumb:focus-within .bb-x { opacity: 1; }
+  .bb-empty { font-size: 13px; color: var(--bb-muted); border: 1px dashed var(--bb-line); border-radius: 8px; padding: 14px; text-align: center; }
+  .bb-hint { font-size: 12px; color: var(--bb-muted); }
+
+  .bb-stage { display: none; flex: 1; min-height: 0; place-items: center; overflow: auto; border-radius: 10px; }
+  .bb-panel.is-expanded .bb-stage { display: grid; }
+  .bb-stage canvas { max-width: 100%; max-height: 100%; border-radius: 6px; box-shadow: 0 2px 16px rgba(0,0,0,.18); cursor: crosshair; touch-action: none; background: #fff; }
+  .bb-markup-bar { display: none; }
+  .bb-panel.is-expanded .bb-markup-bar { display: flex; }
+
+  .bb-field { display: flex; flex-direction: column; gap: 6px; }
+  .bb-input, .bb-textarea { width: 100%; border: 1px solid var(--bb-line); background: var(--bb-raised); color: var(--bb-ink); border-radius: 8px; padding: 9px 11px; font: inherit; }
+  .bb-input:focus, .bb-textarea:focus { outline: none; border-color: var(--bb-green); box-shadow: 0 0 0 3px var(--bb-green-soft); }
+  .bb-textarea { resize: vertical; min-height: 92px; line-height: 1.5; }
+  .bb-input.is-invalid { border-color: var(--bb-danger); }
+  .bb-seg { display: flex; flex-wrap: wrap; gap: 6px; }
+  .bb-seg button { border: 1px solid var(--bb-line); background: var(--bb-raised); border-radius: 99px; padding: 5px 11px; font-size: 13px; }
+  .bb-seg button[aria-pressed="true"] { background: var(--bb-green-soft); border-color: var(--bb-green); color: var(--bb-ink); font-weight: 600; }
+  .bb-seg .sev { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+  .bb-twocol { display: grid; grid-template-columns: 1fr; gap: 14px; }
+
+  .bb-drop { border: 1px dashed var(--bb-line); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; transition: background .12s, border-color .12s; }
+  .bb-drop.is-over { border-color: var(--bb-green); background: var(--bb-green-soft); }
+  .bb-drop label { color: var(--bb-green); font-weight: 600; cursor: pointer; }
+  .bb-files { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .bb-files li { display: flex; align-items: center; gap: 8px; font-size: 13px; background: var(--bb-raised); border: 1px solid var(--bb-line); border-radius: 8px; padding: 6px 6px 6px 10px; }
+  .bb-files li .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bb-files li .size { color: var(--bb-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+  .bb-context { border: 1px solid var(--bb-line); border-radius: 10px; background: var(--bb-raised); }
+  .bb-context summary { list-style: none; cursor: pointer; padding: 10px 12px; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+  .bb-context summary::-webkit-details-marker { display: none; }
+  .bb-context summary .count { margin-left: auto; font-weight: 500; color: var(--bb-muted); font-size: 12px; }
+  .bb-context summary svg { transition: transform .15s; color: var(--bb-muted); }
+  .bb-context[open] summary svg { transform: rotate(90deg); }
+  .bb-ctx-list { display: flex; flex-direction: column; border-top: 1px solid var(--bb-line); }
+  .bb-ctx-item { display: grid; grid-template-columns: 18px 84px 1fr; gap: 8px; align-items: start; padding: 7px 12px; font-size: 12px; border-bottom: 1px solid var(--bb-line); }
+  .bb-ctx-item:last-child { border-bottom: 0; }
+  .bb-ctx-item input { margin: 1px 0 0; accent-color: var(--bb-green); }
+  .bb-ctx-item .k { color: var(--bb-muted); }
+  .bb-ctx-item .v { word-break: break-word; }
+  .bb-ctx-item .v.err { color: var(--bb-danger); }
+
+  .bb-foot { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--bb-line); background: var(--bb-surface); }
+  .bb-foot .bb-dest { flex: 1; font-size: 12px; color: var(--bb-muted); line-height: 1.3; }
+  .bb-foot .bb-dest b { color: var(--bb-ink); font-weight: 600; }
+  .bb-send { border: 0; border-radius: 10px; padding: 10px 16px; background: var(--bb-green); color: var(--bb-green-ink) !important; font-weight: 600; display: inline-flex; gap: 8px; align-items: center; }
+  .bb-send[aria-busy="true"] { opacity: .7; cursor: progress; }
+
+  .bb-done { padding: 32px 24px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+  .bb-done .bb-key { font-size: 28px; font-weight: 700; letter-spacing: -.02em; color: var(--bb-green); }
+  .bb-done p { margin: 0; color: var(--bb-muted); max-width: 44ch; }
+
+  .bb-capture { position: fixed; inset: 0; z-index: 2147483002; cursor: crosshair; background: rgba(10,18,15,.42); touch-action: none; }
+  .bb-capture.is-dragging { background: transparent; }
+  .bb-capture .bb-sel { position: absolute; border: 2px solid var(--bb-brass); border-radius: 4px; box-shadow: 0 0 0 100vmax rgba(10,18,15,.42); display: none; }
+  .bb-capture.is-dragging .bb-sel { display: block; }
+  .bb-capture .bb-sel .dim { position: absolute; right: 0; bottom: -26px; font: 500 11px "JetBrains Mono", monospace; background: var(--bb-brass); color: #1B1406; padding: 3px 6px; border-radius: 4px; white-space: nowrap; }
+  .bb-capture .bb-cap-hint { position: absolute; top: calc(16px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); background: var(--bb-surface); color: var(--bb-ink); border-radius: 99px; padding: 8px 14px; font-size: 13px; box-shadow: var(--bb-shadow); white-space: nowrap; }
+
+  .bb-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 2147483003; background: var(--bb-ink); color: var(--bb-surface); padding: 8px 14px; border-radius: 8px; font-size: 13px; box-shadow: var(--bb-shadow); }
+
+  @media (max-width: 760px) {
+    .bb-panel { left: 12px; right: 12px; width: auto; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); max-height: calc(100% - 90px); }
+    .bb-panel.is-expanded { inset: 8px; }
+    .bb-panel.is-expanded .bb-body { grid-template-columns: 1fr; overflow: auto; grid-template-rows: auto auto; }
+    .bb-panel.is-expanded .bb-media { border-right: 0; border-bottom: 1px solid var(--bb-line); }
+    .bb-panel.is-expanded .bb-stage { min-height: 240px; }
+    .bb-fab .bb-fab-label, .bb-fab kbd { display: none; }
+    .bb-fab { padding: 8px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .bb-panel { animation: none; } .bb-fab { transition: none; } }
+</style>
+
+<!-- ======================= Host app (sample staging app) ======================= -->
+<div class="app">
+  <header class="topbar">
+    <div class="logo"><i></i>Ledgerline</div>
+    <span class="env-ribbon">STAGING</span>
+    <nav class="filters"><span class="chip">Search invoices, customers…</span></nav>
+    <div class="spacer"></div>
+    <div class="avatar">QA</div>
+  </header>
+  <div class="shell">
+    <nav class="side">
+      <a href="#">Dashboard</a>
+      <a href="#" aria-current="page">Invoices</a>
+      <a href="#">Customers</a>
+      <a href="#">Credit notes</a>
+      <a href="#">Reports</a>
+      <a href="#">Settings</a>
+    </nav>
+    <main>
+      <div class="page-head">
+        <div>
+          <div class="crumbs">Receivables / Invoices</div>
+          <h1>Invoices</h1>
+        </div>
+        <div class="filters">
+          <span class="chip">Status: <b>Overdue</b></span>
+          <span class="chip">Currency: <b>EUR</b></span>
+          <span class="chip">Sep 2026</span>
+        </div>
+      </div>
+
+      <section class="kpis" id="sample-target">
+        <div class="kpi"><span>Outstanding</span><strong>€ 48,210.00</strong></div>
+        <div class="kpi"><span>Overdue invoices</span><strong>12</strong></div>
+        <div class="kpi bad"><span>Total in this view</span><strong>NaN €</strong></div>
+      </section>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Invoice</th><th>Customer</th><th>Due</th><th class="num">Amount</th><th class="num">Credit note</th><th class="num">Balance</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>INV-2038</td><td>Northwind Traders</td><td>12 Sep</td><td class="num">€ 4,200.00</td><td class="num">–</td><td class="num">€ 4,200.00</td><td class="status">Overdue</td></tr>
+            <tr><td>INV-2041</td><td>Brightwater GmbH</td><td>14 Sep</td><td class="num">€ 1,860.00</td><td class="num">CN-2041</td><td class="num bad">NaN €</td><td class="status">Overdue</td></tr>
+            <tr><td>INV-2044</td><td>Kestrel Logistics</td><td>17 Sep</td><td class="num">€ 9,420.50</td><td class="num">–</td><td class="num">€ 9,420.50</td><td class="status">Overdue</td></tr>
+            <tr><td>INV-2047</td><td>Aurora Dental</td><td>19 Sep</td><td class="num">€ 725.00</td><td class="num">–</td><td class="num">€ 725.00</td><td class="status">Overdue</td></tr>
+            <tr><td>INV-2052</td><td>Halden &amp; Poe</td><td>21 Sep</td><td class="num">€ 3,118.20</td><td class="num">–</td><td class="num">€ 3,118.20</td><td class="status">Overdue</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="demo-note"><b>Prototype.</b> Ledgerline is a made-up staging app standing in for your Angular frontend. The green button in the corner is Bug Butler. Try <b>Capture area</b>, expand the panel to draw boxes on a screenshot, paste an image, or drop a file. Nothing is sent anywhere.</p>
+    </main>
+  </div>
+</div>
+
+<!-- ======================= Bug Butler widget ======================= -->
+<div id="bb-root">
+  <button class="bb-fab" id="bb-fab" aria-expanded="true" aria-controls="bb-panel" title="Report a bug (Ctrl+Shift+B)">
+    <span class="bb-fab-icon" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7V5a4 4 0 0 1 8 0v2"/><rect x="6" y="7" width="12" height="13" rx="6"/><path d="M12 11v9M3 13h3M18 13h3M4 7l2.5 2M20 7l-2.5 2M4 20l2.5-2M20 20l-2.5-2"/></svg>
+    </span>
+    <span class="bb-fab-label">Report a bug</span>
+    <span class="bb-env">STAGING</span>
+    <kbd>⌃⇧B</kbd>
+  </button>
+
+  <section class="bb-panel" id="bb-panel" role="dialog" aria-label="Report a bug">
+    <header class="bb-head">
+      <div class="bb-titles">
+        <h2 class="bb-display">Report a bug</h2>
+        <span class="bb-where bb-mono" id="bb-where">staging · /invoices?status=overdue</span>
+      </div>
+      <button class="bb-icon-btn" id="bb-expand" title="Expand (full screen)" aria-pressed="false">
+        <svg id="bb-expand-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+      </button>
+      <button class="bb-icon-btn" id="bb-close" title="Minimise (draft is kept)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>
+      </button>
+    </header>
+
+    <div class="bb-body" id="bb-body">
+      <div class="bb-media">
+        <div class="bb-row">
+          <span class="bb-label" id="bb-shot-count">Screenshots</span>
+          <button class="bb-tool primary" id="bb-cap-area">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/></svg>Capture area</button>
+          <button class="bb-tool" id="bb-cap-full">Full page</button>
+        </div>
+        <div class="bb-row bb-markup-bar">
+          <span class="bb-hint">Drag on the screenshot to box the problem.</span>
+          <span style="flex:1"></span>
+          <button class="bb-tool" id="bb-undo" disabled>Undo box</button>
+        </div>
+        <div class="bb-stage" id="bb-stage"></div>
+        <div class="bb-thumbs" id="bb-thumbs"></div>
+      </div>
+
+      <form class="bb-form" id="bb-form" novalidate>
+        <div class="bb-field">
+          <label class="bb-label" for="bb-title">Title</label>
+          <input class="bb-input" id="bb-title" name="title" autocomplete="off" value="Invoice total shows NaN when a credit note is applied">
+        </div>
+        <div class="bb-twocol">
+          <div class="bb-field">
+            <span class="bb-label">Type</span>
+            <div class="bb-seg" id="bb-type" role="group" aria-label="Type">
+              <button type="button" aria-pressed="true">Bug</button>
+              <button type="button" aria-pressed="false">Visual</button>
+              <button type="button" aria-pressed="false">Data</button>
+              <button type="button" aria-pressed="false">Performance</button>
+            </div>
+          </div>
+          <div class="bb-field">
+            <span class="bb-label">Severity</span>
+            <div class="bb-seg" id="bb-sev" role="group" aria-label="Severity">
+              <button type="button" aria-pressed="false"><i class="sev" style="background:#8FA39B"></i>Low</button>
+              <button type="button" aria-pressed="false"><i class="sev" style="background:#D8AE5E"></i>Medium</button>
+              <button type="button" aria-pressed="true"><i class="sev" style="background:#D9733B"></i>High</button>
+              <button type="button" aria-pressed="false"><i class="sev" style="background:#B3362E"></i>Blocker</button>
+            </div>
+          </div>
+        </div>
+        <div class="bb-field">
+          <label class="bb-label" for="bb-desc">What happened</label>
+          <textarea class="bb-textarea" id="bb-desc" name="desc">1. Filter invoices by Status: Overdue
+2. INV-2041 has credit note CN-2041 attached
+3. Balance column and "Total in this view" show NaN €
+
+Expected: € 1,560.00 for INV-2041 and a numeric total.</textarea>
+        </div>
+
+        <div class="bb-field">
+          <span class="bb-label">Attachments</span>
+          <div class="bb-drop" id="bb-drop">
+            <ul class="bb-files" id="bb-files"></ul>
+            <div class="bb-hint">Drop files here, <label for="bb-file">browse</label>, or paste an image.</div>
+            <input type="file" id="bb-file" multiple hidden>
+          </div>
+        </div>
+
+        <details class="bb-context" id="bb-context">
+          <summary>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+            Page context included
+            <span class="count" id="bb-ctx-count"></span>
+          </summary>
+          <div class="bb-ctx-list" id="bb-ctx-list"></div>
+        </details>
+      </form>
+    </div>
+
+    <footer class="bb-foot" id="bb-foot">
+      <div class="bb-dest">Creates a ticket in <b>Jira · QA</b><br>Demo: nothing leaves this page</div>
+      <button class="bb-send" id="bb-send" type="submit" form="bb-form">
+        Send report
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </footer>
+  </section>
+
+  <div class="bb-capture" id="bb-capture" hidden>
+    <div class="bb-cap-hint">Drag to select an area · <span class="bb-mono">Esc</span> to cancel</div>
+    <div class="bb-sel" id="bb-sel"><span class="dim" id="bb-dim"></span></div>
+  </div>
+  <div class="bb-toast" id="bb-toast" role="status" hidden></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+
+  /* --- console capture: the real library patches console.error / window.onerror at bootstrap --- */
+  const consoleErrors = [];
+  const origError = console.error.bind(console);
+  console.error = (...args) => { consoleErrors.push(args.map(String).join(' ')); origError(...args); renderContext(); };
+
+  const state = { shots: [], files: [{ name: 'network-trace.har', size: 219340, example: true }], selected: 0, expanded: false };
+  const panel = $('#bb-panel'), fab = $('#bb-fab');
+
+  /* ---------- panel open / expand ---------- */
+  function setOpen(open) {
+    panel.hidden = !open;
+    fab.setAttribute('aria-expanded', String(open));
+    if (open) setTimeout(() => $('#bb-title')?.focus({ preventScroll: true }), 0);
+  }
+  function setExpanded(on) {
+    state.expanded = on;
+    panel.classList.toggle('is-expanded', on);
+    $('#bb-expand').setAttribute('aria-pressed', String(on));
+    $('#bb-expand').title = on ? 'Back to docked panel' : 'Expand (full screen)';
+    $('#bb-expand-ico').innerHTML = on
+      ? '<path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/>'
+      : '<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>';
+    renderShots();
+  }
+  fab.addEventListener('click', () => setOpen(panel.hidden));
+  $('#bb-close').addEventListener('click', () => { setExpanded(false); setOpen(false); });
+  $('#bb-expand').addEventListener('click', () => setExpanded(!state.expanded));
+
+  /* ---------- segmented controls ---------- */
+  for (const id of ['#bb-type', '#bb-sev']) {
+    $(id).addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      $(id).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    });
+  }
+
+  /* ---------- screenshots ---------- */
+  function placeholder(w = 800, h = 450) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const x = c.getContext('2d');
+    x.fillStyle = '#E9EDEA'; x.fillRect(0, 0, w, h);
+    x.fillStyle = '#5E6D67'; x.font = '600 20px system-ui, sans-serif'; x.textAlign = 'center';
+    x.fillText('Screenshot preview unavailable in this sandbox', w / 2, h / 2);
+    return c;
+  }
+  async function snap(target, rect) {
+    const opts = {
+      backgroundColor: getComputedStyle(document.body).backgroundColor,
+      scale: Math.min(2, window.devicePixelRatio || 1),
+      logging: false,
+      ignoreElements: (el) => el.id === 'bb-root',
+    };
+    if (rect) Object.assign(opts, { x: rect.x + window.scrollX, y: rect.y + window.scrollY, width: rect.w, height: rect.h });
+    try {
+      if (!window.html2canvas) throw new Error('html2canvas missing');
+      return await window.html2canvas(target, opts);
+    } catch (err) {
+      return placeholder(rect ? Math.round(rect.w) : 800, rect ? Math.round(rect.h) : 450);
+    }
+  }
+  function addShot(canvas, label) {
+    canvas.setAttribute('aria-label', label);
+    state.shots.push({ canvas, label, undo: [] });
+    state.selected = state.shots.length - 1;
+    renderShots();
+  }
+  function renderShots() {
+    const n = state.shots.length;
+    $('#bb-shot-count').textContent = n ? `Screenshots · ${n}` : 'Screenshots';
+    const thumbs = $('#bb-thumbs'); thumbs.replaceChildren();
+    if (!n) {
+      const e = document.createElement('div'); e.className = 'bb-empty';
+      e.textContent = 'No screenshots yet. Capture the part of the page that looks wrong.';
+      thumbs.append(e);
+    }
+    state.shots.forEach((s, i) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'bb-thumb'; b.setAttribute('aria-pressed', String(i === state.selected));
+      const img = document.createElement('img'); img.alt = s.label; img.src = s.canvas.toDataURL('image/png');
+      const cap = document.createElement('span'); cap.textContent = s.label;
+      const x = document.createElement('span'); x.className = 'bb-x'; x.textContent = '×'; x.title = 'Remove'; x.setAttribute('role', 'button');
+      x.addEventListener('click', (e) => { e.stopPropagation(); state.shots.splice(i, 1); state.selected = Math.max(0, Math.min(state.selected, state.shots.length - 1)); renderShots(); });
+      b.append(img, cap, x);
+      b.addEventListener('click', () => { state.selected = i; if (!state.expanded) setExpanded(true); else renderShots(); });
+      thumbs.append(b);
+    });
+    const stage = $('#bb-stage'); stage.replaceChildren();
+    const cur = state.shots[state.selected];
+    if (state.expanded) {
+      if (cur) stage.append(cur.canvas);
+      else { const e = document.createElement('div'); e.className = 'bb-empty'; e.textContent = 'Capture an area to mark it up here.'; stage.append(e); }
+    }
+    $('#bb-undo').disabled = !(cur && cur.undo.length);
+  }
+
+  /* markup: draw boxes onto the selected screenshot */
+  let draw = null;
+  const stage = $('#bb-stage');
+  const toCanvas = (c, e) => { const r = c.getBoundingClientRect(); return { x: (e.clientX - r.left) * c.width / r.width, y: (e.clientY - r.top) * c.height / r.height }; };
+  function box(ctx, a, b, w) {
+    const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y), bw = Math.abs(a.x - b.x), bh = Math.abs(a.y - b.y);
+    ctx.fillStyle = 'rgba(217,164,65,0.16)'; ctx.fillRect(x, y, bw, bh);
+    ctx.strokeStyle = '#D9A441'; ctx.lineWidth = w; ctx.strokeRect(x, y, bw, bh);
+  }
+  stage.addEventListener('pointerdown', (e) => {
+    const c = e.target.closest('canvas'); if (!c) return;
+    const ctx = c.getContext('2d');
+    draw = { c, ctx, base: ctx.getImageData(0, 0, c.width, c.height), a: toCanvas(c, e), w: Math.max(3, c.width / 260) };
+    c.setPointerCapture(e.pointerId);
+  });
+  stage.addEventListener('pointermove', (e) => {
+    if (!draw) return;
+    draw.ctx.putImageData(draw.base, 0, 0);
+    box(draw.ctx, draw.a, toCanvas(draw.c, e), draw.w);
+  });
+  stage.addEventListener('pointerup', (e) => {
+    if (!draw) return;
+    const b = toCanvas(draw.c, e);
+    if (Math.abs(b.x - draw.a.x) < 6 || Math.abs(b.y - draw.a.y) < 6) draw.ctx.putImageData(draw.base, 0, 0);
+    else state.shots[state.selected]?.undo.push(draw.base);
+    draw = null; renderShots();
+  });
+  $('#bb-undo').addEventListener('click', () => {
+    const s = state.shots[state.selected]; if (!s || !s.undo.length) return;
+    s.canvas.getContext('2d').putImageData(s.undo.pop(), 0, 0); renderShots();
+  });
+
+  /* region capture overlay */
+  const overlay = $('#bb-capture'), sel = $('#bb-sel');
+  let start = null, capturing = false;
+  function beginCapture() {
+    capturing = true; panel.hidden = true; fab.hidden = true;
+    overlay.hidden = false; overlay.classList.remove('is-dragging');
+  }
+  function endCapture() {
+    capturing = false; start = null; overlay.hidden = true; fab.hidden = false; panel.hidden = false;
+  }
+  $('#bb-cap-area').addEventListener('click', beginCapture);
+  overlay.addEventListener('pointerdown', (e) => { start = { x: e.clientX, y: e.clientY }; overlay.setPointerCapture(e.pointerId); });
+  overlay.addEventListener('pointermove', (e) => {
+    if (!start) return;
+    overlay.classList.add('is-dragging');
+    const x = Math.min(start.x, e.clientX), y = Math.min(start.y, e.clientY), w = Math.abs(e.clientX - start.x), h = Math.abs(e.clientY - start.y);
+    Object.assign(sel.style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px' });
+    $('#bb-dim').textContent = `${Math.round(w)} × ${Math.round(h)}`;
+  });
+  overlay.addEventListener('pointerup', async (e) => {
+    if (!start) return;
+    const rect = { x: Math.min(start.x, e.clientX), y: Math.min(start.y, e.clientY), w: Math.abs(e.clientX - start.x), h: Math.abs(e.clientY - start.y) };
+    endCapture();
+    if (rect.w < 8 || rect.h < 8) { toast('Selection too small. Drag a larger area.'); return; }
+    const c = await snap(document.body, rect);
+    addShot(c, `Area ${Math.round(rect.w)}×${Math.round(rect.h)}`);
+    toast('Screenshot added');
+  });
+  $('#bb-cap-full').addEventListener('click', async () => {
+    const c = await snap(document.body);
+    addShot(c, 'Full page'); toast('Full page captured');
+  });
+
+  /* paste images straight into the report */
+  document.addEventListener('paste', async (e) => {
+    if (panel.hidden) return;
+    const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
+    if (!item) return;
+    e.preventDefault();
+    const bmp = await createImageBitmap(item.getAsFile());
+    const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+    c.getContext('2d').drawImage(bmp, 0, 0);
+    addShot(c, 'Pasted image'); toast('Pasted image added');
+  });
+
+  /* ---------- attachments ---------- */
+  const fmtSize = (b) => b < 1024 ? `${b} B` : b < 1048576 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1048576).toFixed(1)} MB`;
+  function renderFiles() {
+    const ul = $('#bb-files'); ul.replaceChildren();
+    state.files.forEach((f, i) => {
+      const li = document.createElement('li');
+      const n = document.createElement('span'); n.className = 'name'; n.textContent = f.name + (f.example ? ' (example)' : '');
+      const s = document.createElement('span'); s.className = 'size'; s.textContent = fmtSize(f.size);
+      const x = document.createElement('button'); x.type = 'button'; x.className = 'bb-icon-btn'; x.title = `Remove ${f.name}`; x.textContent = '×'; x.style.width = x.style.height = '24px';
+      x.addEventListener('click', () => { state.files.splice(i, 1); renderFiles(); });
+      li.append(n, s, x); ul.append(li);
+    });
+  }
+  const addFiles = (list) => { for (const f of list) state.files.push({ name: f.name, size: f.size }); renderFiles(); };
+  $('#bb-file').addEventListener('change', (e) => { addFiles(e.target.files); e.target.value = ''; });
+  const drop = $('#bb-drop');
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('is-over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('is-over'));
+  drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('is-over'); addFiles(e.dataTransfer.files); });
+
+  /* ---------- auto-collected context ---------- */
+  const excluded = new Set();
+  function browserName() {
+    const ua = navigator.userAgent;
+    const m = ua.match(/(Edg|Firefox|Chrome|Safari)\/(\d+)/);
+    const name = m ? ({ Edg: 'Edge', Firefox: 'Firefox', Chrome: 'Chrome', Safari: 'Safari' })[m[1]] + ' ' + m[2] : 'Unknown';
+    const os = /Mac/.test(ua) ? 'macOS' : /Win/.test(ua) ? 'Windows' : /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : /Linux/.test(ua) ? 'Linux' : '';
+    return `${name}${os ? ' · ' + os : ''}`;
+  }
+  function contextItems() {
+    return [
+      ['route', 'Route', '/invoices?status=overdue'],
+      ['build', 'Build', 'web 4.18.2 · a1c9e07'],
+      ['user', 'User', 'qa.tester@ledgerline.test · finance-admin'],
+      ['browser', 'Browser', browserName()],
+      ['viewport', 'Viewport', `${innerWidth} × ${innerHeight} @${(devicePixelRatio || 1).toFixed(1)}x`],
+      ['console', 'Console', consoleErrors.length ? `${consoleErrors.length} error · ${consoleErrors.at(-1).split('\n')[0]}` : 'No errors', consoleErrors.length > 0],
+      ['network', 'Network', 'GET /api/credit-notes/CN-2041 → 404 (1 of 14 failed)', true],
+      ['time', 'Time', new Date().toLocaleString()],
+    ];
+  }
+  function renderContext() {
+    const list = $('#bb-ctx-list'); if (!list) return;
+    const items = contextItems(); list.replaceChildren();
+    for (const [key, k, v, err] of items) {
+      const row = document.createElement('label'); row.className = 'bb-ctx-item';
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = 'bb-ctx-' + key; cb.checked = !excluded.has(key);
+      cb.addEventListener('change', () => { cb.checked ? excluded.delete(key) : excluded.add(key); updateCount(); });
+      const kk = document.createElement('span'); kk.className = 'k'; kk.textContent = k;
+      const vv = document.createElement('span'); vv.className = 'v bb-mono' + (err ? ' err' : ''); vv.textContent = v;
+      row.append(cb, kk, vv); list.append(row);
+    }
+    updateCount();
+  }
+  function updateCount() { const n = contextItems().length; $('#bb-ctx-count').textContent = `${n - excluded.size} of ${n}`; }
+  addEventListener('resize', renderContext);
+
+  /* ---------- submit ---------- */
+  let formHTML = null;
+  $('#bb-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const title = $('#bb-title');
+    if (!title.value.trim()) { title.classList.add('is-invalid'); title.focus(); toast('Add a short title so the ticket is easy to find.'); return; }
+    title.classList.remove('is-invalid');
+    const send = $('#bb-send'); send.setAttribute('aria-busy', 'true'); send.firstChild.textContent = 'Sending… ';
+    setTimeout(() => {
+      send.removeAttribute('aria-busy'); send.firstChild.textContent = 'Send report ';
+      const shots = state.shots.length, files = state.files.length;
+      formHTML = $('#bb-body').innerHTML;
+      setExpanded(false);
+      $('#bb-body').innerHTML = `<div class="bb-done">
+        <span class="bb-label">Ticket created · example key</span>
+        <div class="bb-key bb-display">QA-1287</div>
+        <p>${shots} screenshot${shots === 1 ? '' : 's'}, ${files} attachment${files === 1 ? '' : 's'} and page context were attached. In this demo nothing actually left the page.</p>
+        <div class="bb-row"><button class="bb-tool primary" id="bb-again" type="button">Report another</button></div>
+      </div>`;
+      $('#bb-foot').hidden = true;
+      $('#bb-again').addEventListener('click', () => location.reload());
+    }, 900);
+  });
+
+  /* ---------- misc ---------- */
+  let toastTimer;
+  function toast(msg) { const t = $('#bb-toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), 2200); }
+  addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { if (capturing) { endCapture(); return; } if (state.expanded) { setExpanded(false); return; } }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'b') { e.preventDefault(); setOpen(panel.hidden); }
+  });
+
+  /* ---------- host app misbehaving, as sample data ---------- */
+  console.error("TypeError: Cannot read properties of undefined (reading 'amount')\n    at InvoiceTotalsPipe.transform (invoice-totals.pipe.ts:28)");
+
+  renderFiles(); renderContext(); renderShots();
+  const seed = async () => {
+    try { await document.fonts?.ready; } catch {}
+    const c = await snap($('#sample-target'));
+    addShot(c, 'Invoice totals (example)');
+  };
+  if (document.readyState === 'complete') seed(); else addEventListener('load', seed);
+})();
+</script>
