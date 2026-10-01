@@ -10,8 +10,8 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "paths": {
-      "ngx-bug-butler": [
-        "./dist/ngx-bug-butler"
+      "bug-butler-angular": [
+        "./dist/bug-butler-angular"
       ]
     },
     "esModuleInterop": true,

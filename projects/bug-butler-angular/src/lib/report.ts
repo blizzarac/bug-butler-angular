@@ -1,8 +1,7 @@
 /**
  * Wire format of a bug report.
  *
- * This file must stay free of Angular imports: `bug-butler-jira` type-checks
- * against it to make sure both packages agree on the contract.
+ * This file must stay free of Angular imports so server code can reuse the types.
  *
  * The default transport sends a `multipart/form-data` request with:
  * - `report`: this object as JSON (`application/json` part)
@@ -81,7 +80,7 @@ export interface BugReport {
   context: BugReportContext;
   screenshots: BugReportScreenshotInfo[];
   attachments: BugReportFileInfo[];
-  /** Version of ngx-bug-butler that produced the report. */
+  /** Version of bug-butler-angular that produced the report. */
   reporterVersion: string;
 }
 

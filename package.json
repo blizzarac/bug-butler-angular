@@ -1,15 +1,12 @@
 {
-  "name": "bug-butler",
+  "name": "bug-butler-angular",
   "version": "0.1.0",
   "scripts": {
-    "start": "ng build ngx-bug-butler && ng serve demo",
-    "build": "npm run build:lib && npm run build:jira && ng build demo",
-    "build:lib": "ng build ngx-bug-butler",
-    "build:jira": "tsc -p projects/bug-butler-jira && node -e \"for (const f of ['package.json','README.md']) require('fs').copyFileSync('projects/bug-butler-jira/'+f,'dist/bug-butler-jira/'+f)\"",
-    "check:contract": "tsc -p projects/bug-butler-jira/tsconfig.contract.json",
-    "test": "npm run test:lib && npm run test:jira",
-    "test:lib": "ng test ngx-bug-butler --watch=false --browsers=ChromeHeadlessCI",
-    "test:jira": "npm run build:jira && node --test projects/bug-butler-jira/test/jira.test.mjs",
+    "start": "ng build bug-butler-angular && ng serve demo",
+    "build": "npm run build:lib && ng build demo",
+    "build:lib": "ng build bug-butler-angular",
+    "test": "npm run test:lib",
+    "test:lib": "ng test bug-butler-angular --watch=false --browsers=ChromeHeadlessCI",
     "e2e": "ng build demo && playwright test -c e2e"
   },
   "private": true,

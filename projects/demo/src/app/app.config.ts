@@ -1,6 +1,6 @@
 import { ApplicationConfig, isDevMode } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideBugButler } from 'ngx-bug-butler';
+import { provideBugButler } from 'bug-butler-angular';
 
 import { routes } from './app.routes';
 

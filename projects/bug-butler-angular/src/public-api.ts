@@ -1,5 +1,5 @@
 /*
- * Public API Surface of ngx-bug-butler
+ * Public API Surface of bug-butler-angular
  */
 export { provideBugButler } from './lib/provide';
 export { BugButlerComponent } from './lib/bug-butler.component';

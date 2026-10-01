@@ -1,22 +1,20 @@
-# Bug Butler
+# Bug Butler Angular
 
 Lets testers file bug tickets straight from the page they're looking at, in non-production
 environments of any Angular app.
 
 A floating button opens a panel for capturing and marking up screenshots, describing the problem
 and attaching files. The report goes to your backend with the page details that make a ticket
-useful: route, build, user, browser, console errors and failed requests. There it becomes a Jira issue.
+useful: route, build, user, browser, console errors and failed requests. Turning the report into a
+ticket (Jira, GitHub, …) is up to your endpoint.
 
-| Package | What it is |
-| --- | --- |
-| [`ngx-bug-butler`](projects/ngx-bug-butler) | The Angular 17+ widget. |
-| [`bug-butler-jira`](projects/bug-butler-jira) | Server-side helper that turns a report into a Jira issue with attachments. Framework-agnostic, no dependencies. |
+The package is [`bug-butler-angular`](projects/bug-butler-angular), an Angular 17+ widget.
 
 ```
-Angular app ── ngx-bug-butler ──POST multipart──▶ your endpoint ── bug-butler-jira ──▶ Jira
+Angular app ── bug-butler-angular ──POST multipart──▶ your endpoint ──▶ your tracker
 ```
 
-Jira credentials only live on your server; the browser never sees them.
+Tracker credentials only live on your server; the browser never sees them.
 
 ## Try it
 
@@ -33,10 +31,8 @@ the report to the console.
 
 | Command | |
 | --- | --- |
-| `npm run build` | Library, Jira helper and demo. |
+| `npm run build` | Library and demo. |
 | `npm run test:lib` | Library unit tests (Karma, headless Chrome). |
-| `npm run test:jira` | Jira helper tests (`node --test`). |
-| `npm run check:contract` | Fails if the widget and the Jira helper disagree on the report format. |
 | `npm run e2e` | Playwright tests against the built demo: capture, markup, redaction, sending. |
 
 Without a Playwright browser download, point the tests at an installed Chromium with `CHROMIUM_PATH`, and the

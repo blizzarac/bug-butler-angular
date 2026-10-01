@@ -1,4 +1,4 @@
-# ngx-bug-butler
+# bug-butler-angular
 
 A floating "Report a bug" widget for Angular 17+ apps, meant for test, QA and staging environments.
 Testers capture part of the page, box or black out what matters, describe the problem, attach files,
@@ -10,19 +10,19 @@ network requests.
 - Password, credit card and `[data-bb-redact]` fields are blacked out in every screenshot.
 - Page details are listed before sending, and each one can be switched off.
 - Shadow DOM: your styles can't break it and its styles can't leak into your app. Light and dark themes.
-- Sends `multipart/form-data` to **your** endpoint. Use [`bug-butler-jira`](../bug-butler-jira) there to create Jira issues.
+- Sends `multipart/form-data` to **your** endpoint. Your endpoint creates the ticket.
 
 ## Install
 
 ```bash
-npm i ngx-bug-butler
+npm i bug-butler-angular
 ```
 
 ## Set up
 
 ```ts
 // app.config.ts
-import { provideBugButler } from 'ngx-bug-butler';
+import { provideBugButler } from 'bug-butler-angular';
 import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
@@ -49,7 +49,7 @@ To remove it entirely, put the provider in its own file and swap that file in pr
 
 ```ts
 // src/app/bug-butler.providers.ts
-import { provideBugButler } from 'ngx-bug-butler';
+import { provideBugButler } from 'bug-butler-angular';
 export const bugButlerProviders = [provideBugButler({ enabled: true, endpoint: '/api/bug-reports' })];
 
 // src/app/bug-butler.providers.prod.ts
@@ -63,7 +63,7 @@ export const bugButlerProviders = [];
 ]
 ```
 
-Then use `providers: [...bugButlerProviders]`. Nothing else in the app should import `ngx-bug-butler`
+Then use `providers: [...bugButlerProviders]`. Nothing else in the app should import `bug-butler-angular`
 for this to remove it completely. The endpoint should also only exist on non-production backends.
 
 ## Options
@@ -116,9 +116,6 @@ A `POST` with `multipart/form-data`:
 
 Answer with `{ "key": "QA-1287", "url": "https://…/browse/QA-1287" }` (both optional) and the reporter
 sees the key and a link. Any non-2xx status shows the response text as an error with a "Try again" button.
-
-For Jira, [`bug-butler-jira`](../bug-butler-jira) does the parsing, validation, issue creation and
-attachment upload in a few lines.
 
 ## Send somewhere else
 

@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { BugButler } from 'ngx-bug-butler';
+import { BugButler } from 'bug-butler-angular';
 
 @Component({
   selector: 'app-root',
