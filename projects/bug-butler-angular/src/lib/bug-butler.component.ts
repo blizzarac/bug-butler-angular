@@ -33,6 +33,7 @@ interface Shot {
 type Status = 'idle' | 'sending' | 'sent' | 'error';
 type MarkupTool = 'highlight' | 'redact';
 
+// Also the marker bug-butler-angular-check looks for in builds (bin/check-dist.mjs). Keep both in sync.
 const DRAFT_KEY = 'bug-butler:draft';
 
 export const BUG_TYPES: { value: BugType; label: string }[] = [

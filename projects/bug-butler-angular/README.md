@@ -45,13 +45,21 @@ That's all. The button appears in the bottom-right corner. `Ctrl+Shift+B` (`âŒ˜â
 ### Keep it out of production builds
 
 `enabled: false` renders nothing and installs no hooks, but the code is still in your bundle.
-To remove it entirely, put the provider in its own file and swap that file in production builds:
+To remove it entirely, the provider lives in its own file that the production build swaps for an empty one.
+`ng add` sets that up:
+
+```bash
+ng add bug-butler-angular            # or: ng generate bug-butler-angular:ng-add --project=my-app --endpoint=/api/bugs
+```
+
+It creates `bug-butler.providers.ts` (with `provideBugButler`) and an empty `bug-butler.providers.prod.ts` next
+to your `app.config.ts`, adds `...bugButlerProviders` to the providers, adds the `fileReplacements` entry to the
+`production` build configuration and a `check:bug-butler` script. Running it again changes nothing.
+If you'd rather do it by hand, those are the four pieces:
 
 ```ts
 // src/app/bug-butler.providers.ts
-import { provideBugButler } from 'bug-butler-angular';
 export const bugButlerProviders = [provideBugButler({ enabled: true, endpoint: '/api/bug-reports' })];
-
 // src/app/bug-butler.providers.prod.ts
 export const bugButlerProviders = [];
 ```
@@ -63,8 +71,18 @@ export const bugButlerProviders = [];
 ]
 ```
 
-Then use `providers: [...bugButlerProviders]`. Nothing else in the app should import `bug-butler-angular`
-for this to remove it completely. The endpoint should also only exist on non-production backends.
+Nothing else in the app should import `bug-butler-angular`, or it stays in the bundle.
+
+**Check the build.** `bug-butler-angular-check` scans the JavaScript of a build and exits 1 if the widget is in it:
+
+```bash
+ng build && npx bug-butler-angular-check dist/my-app/browser   # the ng add script: npm run check:bug-butler
+```
+
+Run it in CI after the production build. Exit codes: 0 clean, 1 widget found (files listed), 2 bad input
+(missing folder, or no JavaScript in it).
+
+The endpoint should also only exist on non-production backends.
 
 ## Options
 

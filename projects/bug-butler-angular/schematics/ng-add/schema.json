@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "$id": "BugButlerNgAdd",
+  "title": "Bug Butler ng-add",
+  "type": "object",
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "Application to set up. Defaults to the default or first application project.",
+      "$default": { "$source": "projectName" }
+    },
+    "endpoint": {
+      "type": "string",
+      "description": "URL the widget POSTs bug reports to.",
+      "default": "/api/bug-reports"
+    }
+  },
+  "required": []
+}

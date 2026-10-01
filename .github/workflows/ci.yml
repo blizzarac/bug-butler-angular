@@ -17,6 +17,7 @@ jobs:
       - run: npm ci
       - run: npm run build:lib
       - run: npm run test:lib
+      - run: npm run test:tools
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
       - name: Pack the library for the compatibility job
@@ -53,3 +54,31 @@ jobs:
       - run: npx playwright test -c e2e/compat
         env:
           ROOT: ${{ github.workspace }}/compat-app/dist/compat-app/browser
+
+  # ng add on a fresh app: the dev build has the widget, the production build must not.
+  ng-add:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          name: bug-butler-angular
+      - name: Create a fresh app and run the schematic
+        run: |
+          NG_CLI_ANALYTICS=false npx -y @angular/cli@latest new app --defaults --skip-git --ssr=false --style=css --skip-tests
+          cd app
+          npm i ../bug-butler-angular-*.tgz
+          npx ng generate bug-butler-angular:ng-add
+      - name: Development build contains the widget, the guard notices
+        working-directory: app
+        run: |
+          npx ng build --configuration development
+          if npm run check:bug-butler; then echo "guard missed the widget"; exit 1; fi
+      - name: Production build is clean
+        working-directory: app
+        run: |
+          npx ng build
+          npm run check:bug-butler

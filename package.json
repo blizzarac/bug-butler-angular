@@ -4,10 +4,11 @@
   "scripts": {
     "start": "ng build bug-butler-angular && ng serve demo",
     "build": "npm run build:lib && ng build demo",
-    "build:lib": "ng build bug-butler-angular",
-    "test": "npm run test:lib",
+    "build:lib": "ng build bug-butler-angular && node scripts/build-tools.mjs",
+    "test": "npm run test:lib && npm run test:tools",
     "test:lib": "ng test bug-butler-angular --watch=false --browsers=ChromeHeadlessCI",
-    "e2e": "ng build demo && playwright test -c e2e"
+    "e2e": "ng build demo && playwright test -c e2e",
+    "test:tools": "node --test projects/bug-butler-angular/bin/check-dist.test.mjs projects/bug-butler-angular/schematics/test/ng-add.test.mjs"
   },
   "private": true,
   "dependencies": {
@@ -26,9 +27,11 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^17.3.17",
+    "@angular-devkit/schematics": "^17.3.17",
     "@angular/cli": "^17.3.17",
     "@angular/compiler-cli": "^17.3.0",
     "@playwright/test": "1.55",
+    "@schematics/angular": "^17.3.17",
     "@types/jasmine": "~5.1.0",
     "jasmine-core": "~5.1.0",
     "karma": "~6.4.0",

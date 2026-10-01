@@ -3,7 +3,13 @@
   "version": "0.1.0",
   "description": "Floating bug-report widget for Angular apps: region screenshots with markup, attachments and page context, for non-production environments.",
   "license": "MIT",
-  "keywords": ["angular", "bug-report", "qa", "screenshot", "feedback"],
+  "keywords": [
+    "angular",
+    "bug-report",
+    "qa",
+    "screenshot",
+    "feedback"
+  ],
   "peerDependencies": {
     "@angular/common": ">=17.0.0",
     "@angular/core": ">=17.0.0",
@@ -13,5 +19,12 @@
     "html2canvas-pro": "^2.4.5",
     "tslib": "^2.3.0"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "schematics": "./schematics/collection.json",
+  "ng-add": {
+    "save": "dependencies"
+  },
+  "bin": {
+    "bug-butler-angular-check": "./bin/check-dist.mjs"
+  }
 }

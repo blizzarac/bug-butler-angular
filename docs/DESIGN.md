@@ -24,7 +24,7 @@ Usage docs: [`projects/bug-butler-angular`](../projects/bug-butler-angular).
 
 ## Environment gating (defense in depth)
 
-1. **Build time**: `fileReplacements` swaps the provider file for an empty one in production, so the library is not in the bundle.
+1. **Build time**: `fileReplacements` swaps the provider file for an empty one in production, so the library is not in the bundle. `ng add bug-butler-angular` (a schematic) sets this up, and `bug-butler-angular-check <dist>` fails CI if the widget is in a build anyway (it looks for a string literal of the widget component that survives minification).
 2. **Runtime**: `enabled` flag, plus an optional `allowedHosts` list.
 3. **Server**: the endpoint only exists on non-production deployments and holds the tracker token.
 
@@ -41,6 +41,8 @@ projects/bug-butler-angular/src/lib/
   screenshot.service.ts      html2canvas-pro capture with redaction
   transport.ts               BugReportTransport, default HTTP multipart transport
   report.ts                  wire format (no Angular imports)
+projects/bug-butler-angular/schematics/ng-add/   ng add: provider files, fileReplacements, app.config, check script
+projects/bug-butler-angular/bin/check-dist.mjs   build guard CLI (bug-butler-angular-check)
 projects/demo/               sample app with a seeded bug
 e2e/                         Playwright tests (demo + latest-Angular compatibility)
 ```

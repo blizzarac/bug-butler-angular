@@ -33,6 +33,7 @@ the report to the console.
 | --- | --- |
 | `npm run build` | Library and demo. |
 | `npm run test:lib` | Library unit tests (Karma, headless Chrome). |
+| `npm run test:tools` | `ng add` schematic and build guard tests (`node --test`, needs `build:lib` first). |
 | `npm run e2e` | Playwright tests against the built demo: capture, markup, redaction, sending. |
 
 Without a Playwright browser download, point the tests at an installed Chromium with `CHROMIUM_PATH`, and the
