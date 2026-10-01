@@ -40,5 +40,3 @@ Without a Playwright browser download, point the tests at an installed Chromium 
 unit tests with `CHROME_BIN`.
 
 CI also installs the packed library into a fresh app on the newest Angular release and runs an end-to-end check there.
-
-See [docs/DESIGN.md](docs/DESIGN.md) for the design and [docs/prototype](docs/prototype/bug-butler.html) for the original clickable mock-up.
